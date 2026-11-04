@@ -74,10 +74,8 @@ considering the assignment's performance goals.
 │   ├── __init__.py
 │   ├── exception.py                # Shared exception handling
 │   ├── logger.py                   # Application logging configuration
-│   ├── components/
-│   │   ├── data_ingestion.py       # Load and split the dataset
-│   │   ├── data_transformation.py  # Prepare features for modeling
-│   │   └── model_trainer.py        # Train and compare classifiers
+│   ├── components
+│   │
 │   └── pipeline/
 │       ├── predict_pipeline.py     # Load artifacts and make predictions
 │       └── train_pipeline.py       # Run the training workflow
