@@ -1,0 +1,29 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test, coverage, and linter output
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Streamlit local secrets and cache
+.streamlit/secrets.toml
+.streamlit/cache/
+
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
