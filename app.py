@@ -62,10 +62,7 @@ st.write(
     "Compare the saved classification models on held-out test data, or estimate "
     "whether an adult's income is above $50K per year."
 )
-st.caption(
-    "This model is for educational use only. Predictions may reflect limitations "
-    "or biases in the historical dataset and should not be used for decisions about people."
-)
+
 
 selected_model = st.sidebar.selectbox("Classification model", list(MODEL_ARTIFACTS))
 
