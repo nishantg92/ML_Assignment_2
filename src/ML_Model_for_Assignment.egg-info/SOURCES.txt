@@ -1,0 +1,11 @@
+README.md
+setup.py
+src/__init__.py
+src/evaluation.py
+src/preprocessing.py
+src/train.py
+src/ML_Model_for_Assignment.egg-info/PKG-INFO
+src/ML_Model_for_Assignment.egg-info/SOURCES.txt
+src/ML_Model_for_Assignment.egg-info/dependency_links.txt
+src/ML_Model_for_Assignment.egg-info/requires.txt
+src/ML_Model_for_Assignment.egg-info/top_level.txt

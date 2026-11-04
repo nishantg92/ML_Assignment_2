@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: ML-Model-for-Assignment
+Version: 0.0.1
+Author: Nishant G
+Author-email: 2026aj05092@wilp.bits-pilani.ac.in
+Requires-Dist: streamlit
+Requires-Dist: scikit-learn
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: matplotlib
+Requires-Dist: seaborn
+Requires-Dist: joblib
+Requires-Dist: setuptools
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist

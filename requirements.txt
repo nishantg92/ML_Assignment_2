@@ -5,3 +5,7 @@ pandas
 matplotlib
 seaborn
 joblib
+setuptools
+pytest
+
+-e .
