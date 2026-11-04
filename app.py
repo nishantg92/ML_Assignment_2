@@ -1,16 +1,24 @@
 """Streamlit interface for the Adult Income classification models."""
 
+from io import BytesIO
+from pathlib import Path
+
+import pandas as pd
 import streamlit as st
 from sklearn.pipeline import Pipeline
 
 from src.exception import CustomException
 from src.logger import logger
 from src.pipeline.predict_pipeline import (
+    EvaluationResult,
     MODEL_ARTIFACTS,
+    evaluate_test_data,
     get_input_schema,
     load_model,
     predict_income,
 )
+
+TEST_DATA_PATH = Path(__file__).resolve().parent / "notebook" / "test_data.csv"
 
 
 NUMERIC_DEFAULTS = {
@@ -39,11 +47,20 @@ def cached_model(model_name: str) -> Pipeline:
     return load_model(model_name)
 
 
+@st.cache_data(show_spinner=False, max_entries=3)
+def cached_test_results(csv_bytes: bytes) -> dict[str, EvaluationResult]:
+    test_data = pd.read_csv(BytesIO(csv_bytes))
+    return {
+        model_name: evaluate_test_data(cached_model(model_name), test_data)
+        for model_name in MODEL_ARTIFACTS
+    }
+
+
 st.set_page_config(page_title="Adult Income Predictor", page_icon=":material/analytics:")
 st.title("Adult income predictor")
 st.write(
-    "Explore the saved classification models and estimate whether an adult's "
-    "income is above $50K per year."
+    "Compare the saved classification models on held-out test data, or estimate "
+    "whether an adult's income is above $50K per year."
 )
 st.caption(
     "This model is for educational use only. Predictions may reflect limitations "
@@ -51,6 +68,77 @@ st.caption(
 )
 
 selected_model = st.sidebar.selectbox("Classification model", list(MODEL_ARTIFACTS))
+
+st.subheader("Evaluate saved models on test data")
+st.caption(
+    "Use the bundled held-out test data or upload a replacement test CSV (up to 10 MB). "
+    "The CSV must include all 14 input features and the income target. "
+    "Models are loaded from saved artifacts; they are not retrained."
+)
+uploaded_test_data = st.file_uploader(
+    "Upload held-out test data (CSV)",
+    type=["csv"],
+    max_upload_size=10,
+    help="Upload test rows only, including the 14 model features and the income column.",
+)
+
+if uploaded_test_data is not None:
+    test_csv_bytes = uploaded_test_data.getvalue()
+    test_data_name = uploaded_test_data.name
+elif TEST_DATA_PATH.is_file():
+    test_csv_bytes = TEST_DATA_PATH.read_bytes()
+    test_data_name = TEST_DATA_PATH.name
+else:
+    test_csv_bytes = None
+    test_data_name = ""
+    st.info("Upload a test CSV to compare the saved models.")
+
+if test_csv_bytes is not None:
+    try:
+        test_results = cached_test_results(test_csv_bytes)
+    except (
+        CustomException,
+        FileNotFoundError,
+        ValueError,
+        pd.errors.ParserError,
+        UnicodeDecodeError,
+    ) as exc:
+        logger.exception("Could not evaluate test CSV %s", test_data_name)
+        st.error(f"Could not evaluate the test CSV: {exc}")
+    else:
+        st.caption(f"Evaluation results for `{test_data_name}`")
+        evaluated_rows = sum(map(sum, test_results[selected_model].confusion_matrix))
+        st.caption(f"Rows evaluated: {evaluated_rows:,}")
+        comparison = pd.DataFrame(
+            [
+                {"Model": model_name, **result.metrics}
+                for model_name, result in test_results.items()
+            ]
+        ).set_index("Model")
+        st.dataframe(comparison, width="stretch")
+
+        selected_result = test_results[selected_model]
+        st.subheader(f"Detailed results: {selected_model}")
+        report_rows = {
+            label: values if isinstance(values, dict) else {"score": values}
+            for label, values in selected_result.classification_report.items()
+        }
+        details_column, matrix_column = st.columns(2)
+        details_column.dataframe(
+            pd.DataFrame.from_dict(report_rows, orient="index").rename_axis("Class"),
+            width="stretch",
+        )
+        matrix_column.dataframe(
+            pd.DataFrame(
+                selected_result.confusion_matrix,
+                index=["Actual <=50K", "Actual >50K"],
+                columns=["Predicted <=50K", "Predicted >50K"],
+            ),
+            width="stretch",
+        )
+
+st.divider()
+st.subheader("Try an individual prediction")
 
 try:
     model = cached_model(selected_model)

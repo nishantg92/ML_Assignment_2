@@ -5,6 +5,16 @@ from typing import Mapping
 
 import joblib
 import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.pipeline import Pipeline
 
 from src.exception import CustomException
@@ -27,6 +37,13 @@ INCOME_LABELS = {0: "<=50K", 1: ">50K"}
 class Prediction:
     income: str
     probability_over_50k: float
+
+
+@dataclass(frozen=True)
+class EvaluationResult:
+    metrics: dict[str, float]
+    confusion_matrix: list[list[int]]
+    classification_report: dict[str, object]
 
 
 def load_model(model_name: str) -> Pipeline:
@@ -105,3 +122,78 @@ def predict_income(model: Pipeline, features: Mapping[str, object]) -> Predictio
 
     logger.info("Prediction completed")
     return Prediction(income=income, probability_over_50k=probability)
+
+
+def evaluate_test_data(
+    model: Pipeline, test_data: pd.DataFrame, target_column: str = "income"
+) -> EvaluationResult:
+    expected_features = list(model.feature_names_in_)
+    missing_columns = set(expected_features + [target_column]) - set(test_data.columns)
+    if missing_columns:
+        raise ValueError(
+            f"Test CSV is missing required columns: {sorted(missing_columns)}"
+        )
+    if test_data.empty:
+        raise ValueError("Test CSV must contain at least one row")
+
+    def encode_target(value: object) -> int | None:
+        if pd.isna(value):
+            return None
+        label = str(value).strip().rstrip(".")
+        if label in {"0", "<=50K"}:
+            return 0
+        if label in {"1", ">50K"}:
+            return 1
+        return None
+
+    y_true = test_data[target_column].map(encode_target)
+    if y_true.isna().any():
+        invalid_labels = test_data.loc[y_true.isna(), target_column].unique().tolist()
+        raise ValueError(
+            f"Target column '{target_column}' contains missing or unsupported labels: "
+            f"{invalid_labels[:5]}"
+        )
+    y_true = y_true.astype(int)
+    if set(y_true.unique()) != {0, 1}:
+        raise ValueError(
+            f"Target column '{target_column}' must contain both income classes "
+            "'<=50K' and '>50K' to calculate all evaluation metrics"
+        )
+
+    input_data = test_data.loc[:, expected_features]
+    try:
+        y_pred = model.predict(input_data)
+        classifier = model.named_steps["classifier"]
+        classes = list(classifier.classes_)
+        if 1 not in classes:
+            raise ValueError("The model does not contain the >50K income class")
+        y_score = model.predict_proba(input_data)[:, classes.index(1)]
+    except Exception as exc:
+        logger.exception("Evaluation failed")
+        raise CustomException("The selected model could not evaluate test data", sys) from exc
+
+    metrics = {
+        "Accuracy": float(accuracy_score(y_true, y_pred)),
+        "AUC": float(roc_auc_score(y_true, y_score)),
+        "Precision": float(
+            precision_score(y_true, y_pred, pos_label=1, zero_division=0)
+        ),
+        "Recall": float(recall_score(y_true, y_pred, pos_label=1, zero_division=0)),
+        "F1": float(f1_score(y_true, y_pred, pos_label=1, zero_division=0)),
+        "MCC": float(matthews_corrcoef(y_true, y_pred)),
+    }
+    matrix = confusion_matrix(y_true, y_pred, labels=[0, 1]).tolist()
+    report = classification_report(
+        y_true,
+        y_pred,
+        labels=[0, 1],
+        target_names=[INCOME_LABELS[0], INCOME_LABELS[1]],
+        output_dict=True,
+        zero_division=0,
+    )
+    logger.info("Test-data evaluation completed for %d rows", len(test_data))
+    return EvaluationResult(
+        metrics=metrics,
+        confusion_matrix=matrix,
+        classification_report=report,
+    )

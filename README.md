@@ -84,8 +84,13 @@ considering the assignment's performance goals.
 
 The Streamlit app loads the five saved pipelines from `notebook/model/`. Each
 pipeline includes its fitted preprocessing, so predictions use the same feature
-transformations as training. `logs/` is used at runtime for log files; it is not
-part of the source-code package.
+transformations as training. The evaluation section compares all five saved
+models on `notebook/test_data.csv` by default, or on an uploaded test CSV (up to
+10 MB). The CSV must include the 14 input features and the `income` target.
+Evaluation displays accuracy, AUC, precision, recall, F1, MCC, a classification
+report, and a confusion matrix for the selected model. Uploaded data is used
+only for evaluation; the app never retrains models. `logs/` is used at runtime
+for log files; it is not part of the source-code package.
 ## Run locally
 
 From the project root, create and activate a virtual environment, then install
