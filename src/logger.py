@@ -1,19 +1,30 @@
-import logging 
+import logging
 import os
-from datetime import datetime
+from pathlib import Path
 
-LOG_FILE =f"{datetime.now().strftime('%m_%d_%Y_%H_%M_%S')}.log"
-logs_path = os.path.join(os.getcwd(), "logs", LOG_FILE)
-os.makedirs(logs_path, exist_ok=True)
 
-Log_file_path =os.path.join(logs_path,LOG_FILE)
+logger = logging.getLogger("adult_income")
+logger.setLevel(logging.INFO)
+logger.propagate = False
 
-logging.basicConfig (
-    filename=Log_file_path,
-    format='[%(asctime)s] %(levelname)s - %(message)s',
-    level  =logging.INFO,
+if not logger.handlers:
+    formatter = logging.Formatter(
+        "[%(asctime)s] %(levelname)s - %(message)s"
+    )
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
- )
-
-if __name__=="__main__":
-    logging.info('Logging has been started')
+    log_dir = Path(
+        os.environ.get(
+            "APP_LOG_DIR",
+            str(Path(__file__).resolve().parents[1] / "logs"),
+        )
+    )
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_dir / "app.log", encoding="utf-8")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except OSError:
+        logger.exception("File logging could not be initialized at %s", log_dir)

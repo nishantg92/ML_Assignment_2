@@ -55,31 +55,63 @@ considering the assignment's performance goals.
 
 ## Project structure
 
+```text
 .
 ├── app.py
-├── adult.csv
-├── test_data.csv
 ├── requirements.txt
-├── README.md
-├── model/
-│   └── .gitkeep
+├── setup.py
+├── notebook/
+│   ├── data/adult.csv
+│   └── model/                 # Saved preprocessing + classifier pipelines
 └── src/
-    ├── evaluation.py
-    ├── preprocessing.py
-    └── train.py
+    ├── exception.py
+    ├── logger.py
+    └── pipeline/predict_pipeline.py
+```
 
-Trained model pipelines will be saved under `model/` after training. The
-preprocessing pipeline should be saved with each classifier so inference uses
-the same transformations as training.
+The Streamlit app loads the five saved pipelines from `notebook/model/`.
+Each pipeline includes the preprocessing fitted during notebook training, so
+the app uses the same feature transformations at prediction time. Scikit-learn
+is pinned to the version used to create these serialized models.
 
 ## Run locally
 
-1. Install the dependencies listed in `requirements.txt`.
-2. Implement the training and Streamlit app code.
-3. Run the app with `streamlit run app.py`.
+From the project root, create and activate a virtual environment, then install
+the dependencies:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Start the app:
+
+```powershell
+python -m streamlit run app.py
+```
+
+Streamlit prints a local URL (usually `http://localhost:8501`). Logs are written
+to the console and `logs/app.log`. Set `APP_LOG_DIR` to change the log directory.
+
+Run the prediction pipeline tests with:
+
+```powershell
+python -m pytest
+```
 
 ## Deploy on Streamlit Community Cloud
 
-Create a new app in Streamlit Community Cloud, select this GitHub repository,
-choose the branch containing the app, and set the main file to `app.py`.
-Deploy after the app and its required model files are ready.
+1. Push the app, `requirements.txt`, and all five files in `notebook/model/` to
+   the GitHub branch you want to deploy. The saved model files must remain in
+   that folder.
+2. In [Streamlit Community Cloud](https://share.streamlit.io/), create an app
+   from this repository and branch.
+3. Set the app's main file path to `app.py`, then deploy.
+4. If choosing a Python runtime manually, select Python 3.11 or newer. The
+   dependency file pins scikit-learn to the model artifact version.
+
+The app does not require secrets, external services, or a separately running
+training job. Community Cloud logs are available in the app's management page;
+its filesystem is ephemeral, so `logs/app.log` is intended for local debugging.

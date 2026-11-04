@@ -1,23 +1,26 @@
-from setuptools import find_packages,setup
-from typing import List
+from pathlib import Path
 
-def get_requirements(File_path :str) ->List[str]:
-    """ This function will return the list of the requirements package """
-    requirements =[]
+from setuptools import find_packages, setup
 
-    with open(File_path) as file_obj:
-        requirements =file_obj.readlines()
-        requirements = [req.replace("\n","") for req in requirements]
 
-        if "-e ." in requirements:
-            requirements.remove("-e .")
-    return requirements
+ROOT_DIR = Path(__file__).resolve().parent
+
+
+def get_requirements() -> list[str]:
+    requirements_path = ROOT_DIR / "requirements.txt"
+    return [
+        requirement
+        for line in requirements_path.read_text(encoding="utf-8").splitlines()
+        if (requirement := line.strip()) and not requirement.startswith(("#", "-e ."))
+    ]
 
 
 setup(
-    name='ML Model for Assignment',
-    version = '0.0.1',
-    author = 'Nishant G',
-    author_email = '2026aj05092@wilp.bits-pilani.ac.in',
-    install_requires= get_requirements("requirements.txt")
+    name="ml-model-for-assignment",
+    version="0.0.1",
+    author="Nishant G",
+    author_email="2026aj05092@wilp.bits-pilani.ac.in",
+    packages=find_packages(include=["src", "src.*"]),
+    install_requires=get_requirements(),
+    python_requires=">=3.11",
 )

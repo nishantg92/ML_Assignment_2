@@ -17,6 +17,7 @@ htmlcov/
 # Streamlit local secrets and cache
 .streamlit/secrets.toml
 .streamlit/cache/
+logs/*.log
 
 # Local environment variables and credentials
 .env
