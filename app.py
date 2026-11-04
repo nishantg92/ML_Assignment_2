@@ -1,4 +1,5 @@
 """Streamlit interface for the Adult Income classification models."""
+
 import streamlit as st
 from sklearn.pipeline import Pipeline
 

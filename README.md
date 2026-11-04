@@ -55,51 +55,65 @@ considering the assignment's performance goals.
 
 ## Project structure
 
-```text
-.
-├── app.py
-├── requirements.txt
-├── setup.py
+
+├── app.py                          # Streamlit prediction interface
+├── requirements.txt                # Python dependencies
+├── setup.py                        # Package configuration
 ├── notebook/
-│   ├── data/adult.csv
-│   └── model/                 # Saved preprocessing + classifier pipelines
-└── src/
-    ├── exception.py
-    ├── logger.py
-    └── pipeline/predict_pipeline.py
-```
+│   ├── adult_income.ipynb          # Exploratory/training notebook
+│   ├── test_data.csv               # Held-out test data
+│   ├── data/
+│   │   └── adult.csv               # Adult Income source dataset
+│   └── model/                      # Saved scikit-learn model pipelines
+│       ├── decision_tree.joblib
+│       ├── knn.joblib
+│       ├── logistic_regression.joblib
+│       ├── naive_bayes.joblib
+│       └── support_vector_machine.joblib
+├── src/
+│   ├── __init__.py
+│   ├── exception.py                # Shared exception handling
+│   ├── logger.py                   # Application logging configuration
+│   ├── components/
+│   │   ├── data_ingestion.py       # Load and split the dataset
+│   │   ├── data_transformation.py  # Prepare features for modeling
+│   │   └── model_trainer.py        # Train and compare classifiers
+│   └── pipeline/
+│       ├── predict_pipeline.py     # Load artifacts and make predictions
+│       └── train_pipeline.py       # Run the training workflow
+└── tests/
+    └── test_predict_pipeline.py    # Prediction pipeline tests
 
-The Streamlit app loads the five saved pipelines from `notebook/model/`.
-Each pipeline includes the preprocessing fitted during notebook training, so
-the app uses the same feature transformations at prediction time. Scikit-learn
-is pinned to the version used to create these serialized models.
-
+The Streamlit app loads the five saved pipelines from `notebook/model/`. Each
+pipeline includes its fitted preprocessing, so predictions use the same feature
+transformations as training. `logs/` is used at runtime for log files; it is not
+part of the source-code package.
 ## Run locally
 
 From the project root, create and activate a virtual environment, then install
 the dependencies:
 
-```powershell
+powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-```
+
 
 Start the app:
 
-```powershell
+powershell
 python -m streamlit run app.py
-```
+
 
 Streamlit prints a local URL (usually `http://localhost:8501`). Logs are written
 to the console and `logs/app.log`. Set `APP_LOG_DIR` to change the log directory.
 
 Run the prediction pipeline tests with:
 
-```powershell
+powershell
 python -m pytest
-```
+
 
 ## Deploy on Streamlit Community Cloud
 
@@ -111,6 +125,10 @@ python -m pytest
 3. Set the app's main file path to `app.py`, then deploy.
 4. If choosing a Python runtime manually, select Python 3.11 or newer. The
    dependency file pins scikit-learn to the model artifact version.
+5. Open the Link as i have deployed on cloud as well 
+  https://mlassignment2-nishnat2026aj05092.streamlit.app/
+
+
 
 The app does not require secrets, external services, or a separately running
 training job. Community Cloud logs are available in the app's management page;
